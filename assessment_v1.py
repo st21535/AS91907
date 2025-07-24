@@ -1,82 +1,67 @@
-from tkinter import *
+from tkinter import * 
+from tkcalendar import DateEntry
 
-class StudyClock:
+class TaskManger:
     def __init__(self):
-        self.root = Tk()
-        self.root.title("Study Buddy")
-
-        self.container = Frame(self.root)
-        self.container.grid(row=0,column=0,sticky="nswe")
-
-
-        self.frames = {}
-
-        self.frames["MainFrame"] = self.create_main_frame()
-        self.frames["AddTask"] = self.create_to_addtask()
-        self.frames["Tracker"] = self.create_to_tracker()
-        self.frames["StudyClock"] = self.create_to_clock()
+        self.root=Tk()
+        self.container=Frame(self.root)
+        self.container.grid(row=0,column=0,sticky="nesw")
         
-        self.show_frame("MainFrame")
+        frame=Frame(self.container)
+        #Main Heading
+        self.add_task_label=Label(frame,font="arial 16", text="Add Task!")
 
-    def show_frame(self, name):
-        frame = self.frames[name]
-        frame.tkraise()
-        
-    def create_main_frame(self):
-        frame = Frame(self.container)
+        self.add_task_label.grid(row=0,columnspan=3,padx=10,pady=10)
 
-        self.main_title_label=Label(frame,font="Arial 16", text="Study Buddy!")
-        self.main_title_label.grid(row=0,columnspan=3,padx=10,pady=10)
+        #getting name for project
+        self.prj_name_label = Label(self.root, font = "Arial 16", text = "Name Of Project")
+        self.prj_name_label.grid(sticky = NSEW)
 
-        self.to_task_button=Button(frame, text="To Tracker",font="Arial 12",command=lambda:self.show_frame("Tracker"))
-        self.to_task_button.grid(row=1,column=0,padx=10,pady=10)
+        self.prj_name = Entry(self.root, justify = CENTER)
+        self.prj_name.grid(row=2)
 
-        self.to_task_button=Button(frame, text="To task adder",font="Arial 12",command=lambda:self.show_frame("AddTask"))
-        self.to_task_button.grid(row=1,column=1,padx=10,pady=10)
+        #getting Priorty Level
+        self.levels = ["1", "2", "3", "4","5"]
+        self.radio_var = IntVar()
+        self.radio_var.set(99)
 
-        self.to_task_button=Button(frame, text="StudyClock",font="Arial 12",command=lambda:self.show_frame("StudyClock"))
-        self.to_task_button.grid(row=1,column=2,padx=10,pady=10)
-        frame.grid(row=0, column=0, sticky="nswe")
-        return frame
+        self.levels_label = Label(self.root, font = "Arial 16", text = "Priorty Level")
+        self.levels_label.grid(sticky = NSEW,row=3)
 
-    def create_to_addtask(self):
-        frame = Frame(self.container)
-        self.title=Label(frame,font="Arial 16", text="Haro")
+        for i in range(5):
+            Radiobutton(self.root, font = "Arial 11",text=self.levels[i], variable=self.radio_var, value = i, ).grid(row = (i+4), column = 0, sticky="nsew", columnspan=1, padx=60)
+
+        #Submit Button
+        self.name_button = Button(self.root, text="Submit", font="Arial 16",command=self.info)
+        self.name_button.grid(padx=10,pady=10,row=13)
 
         
-        self.back_button=Button(frame, text="BAck",font="Arial 12",command=lambda:self.show_frame("MainFrame"))
-        self.back_button.grid(row=1,column=0,padx=10,pady=10)
-        self.title.grid(row=0,columnspan=3,padx=10,pady=10)
+        
+        get_date_label=Label(self.root,font = "Arial 16", text = "Due Date" )
+        get_date_label.grid(sticky = NSEW,row=11)
 
-        frame.grid(row=0, column=0, sticky="nswe")
-
-        return frame
-    def create_to_tracker(self):
-        frame = Frame(self.container)
-        self.title=Label(frame,font="Arial 16", text="Haro")
-        self.title.grid(row=0,columnspan=3,padx=10,pady=10)
-        self.back_button=Button(frame, text="BAck",font="Arial 12",command=lambda:self.show_frame("MainFrame"))
-        self.back_button.grid(row=1,column=0,padx=10,pady=10)
-
-        frame.grid(row=0, column=0, sticky="nswe")
-
-        return frame
-    def create_to_clock(self):
-        frame = Frame(self.container)
-        self.title=Label(frame,font="Arial 16", text="Haro")
-        self.title.grid(row=0,columnspan=3,padx=10,pady=10)
-
-        self.back_button=Button(frame, text="BAck",font="Arial 12",command=lambda:self.show_frame("MainFrame"))
-        self.back_button.grid(row=1,column=0,padx=10,pady=10)
-
-        frame.grid(row=0, column=0, sticky="nswe")
-
-        return frame
+        due=DateEntry(self.root, width=15,year=2025,month=7)
+        due.grid(row=12)
 
 
 
+        
+    def info(self):
+        self.name = str(self.levels[self.radio_var.get()]) + " " + str(self.prj_name.get() + str(self.due.get_date()))
 
+        self.name_label = Label(self.root, font = "Arial 16", text = self.name)
+        self.name_label.grid(sticky = NSEW,row=14)
+        
+        
     def run(self):
         self.root.mainloop()
+app = TaskManger()
+app.run()
+'''
+        entrybox
 
-StudyClock().run()
+        oeuirty level-0radiobutton\duedate
+        
+        '''
+
+
