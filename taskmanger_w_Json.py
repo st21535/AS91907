@@ -40,27 +40,27 @@ class TaskManger:
         get_date_label=Label(self.root,font = "Arial 16", text = "Due Date" )
         get_date_label.grid(sticky = NSEW,row=11)
 
-        due=DateEntry(self.root, width=15,year=2025,month=7)
-        due.grid(row=12)
+        self.due=DateEntry(self.root, width=15,year=2025,month=7)
+        self.due.grid(row=12)
 
         #Submit Button
         self.name_button = Button(self.root, text="Submit", font="Arial 16",command=self.info)
         self.name_button.grid(padx=10,pady=10,row=13)
         
     def info(self):
-        '''
-        selected_date = self.cal.get_date()
-        print(selected_date)
-        self.name = str(self.levels[self.radio_var.get()]) + " " + str(self.prj_name.get() )
 
-        self.name_label = Label(self.root, font = "Arial 16", text = self.name)
-        self.name_label.grid(sticky = NSEW,row=14)
-        '''
         info={"Project Name": str(self.prj_name.get()), "Level":str(self.levels[self.radio_var.get()]), "Due Date": str(self.due.get_date())}
         print(info)
-        
-        with open("tasks.json", "r") as f:
-            json.dump(info, f, indent=4) 
+        try:
+            with open("tasks.json", "r") as f:
+                data=json.load(f)
+        except:
+            data=[]
+        data.append(info)
+    
+        with open("tasks.json", "w") as f:
+            json.dump(data, f, indent=4) 
+
             
         
         
