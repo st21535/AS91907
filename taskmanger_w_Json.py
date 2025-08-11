@@ -1,7 +1,7 @@
 from tkinter import * 
 from tkcalendar import DateEntry
 import json
-from datetime import date
+
 
 class TaskManger:
     def __init__(self):
@@ -28,7 +28,7 @@ class TaskManger:
         #getting Priorty Level
         self.levels = ["1", "2", "3", "4","5"]
         self.radio_var = IntVar()
-        self.radio_var.set(99)
+        self.radio_var.set(1)
 
         self.levels_label = Label(self.root, font = "Arial 16", text = "Priorty Level")
         self.levels_label.grid(columnspan=2,row=3)
