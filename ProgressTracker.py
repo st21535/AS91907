@@ -1,51 +1,75 @@
-''''
-Progress Tracker
-
+'''
+Progress tracking
 '''
 
-from tkinter import * 
+from tkinter import *
+from tkinter import ttk
 import json
+from datetime import datetime
+
 class ProgressTracker:
     def __init__(self):
-        self.root=Tk()
-        self.root.title("Progress Tracker!")
-        self.container=Frame(self.root)
-        self.container.grid(row=0,column=0,sticky="nesw")
-        self.root.geometry("600x600")
+        self.root = Tk()
+        self.root.title("Progress Tracker")
+        self.root.geometry("600x400")
 
-        
-        frame=Frame(self.container)
-        frame.grid(row=0,column=0,padx=10,pady=10)
-        
-        frame.rowconfigure(list(range(3),weight=1))
-        frame.columnconfigure(list(range(3),weight=1))
+        self.tasks = self.load_tasks()
 
-        #Title
-        self.prj_name_label = Label(self.root, font = "Arial 16", text = "Title",justify=CENTER)
-        self.prj_name_label.grid(sticky="WE",row=0,columnspan=2)
+        self.root.grid_rowconfigure(0, weight=1)   
+        self.root.grid_rowconfigure(1, weight=0)   
+        self.root.grid_columnconfigure(1, weight=1) 
+        self.root.grid_columnconfigure(0,weight=1)
+
+        self.left_frame = LabelFrame(self.root, text="Tasks by Priority", padx=10, pady=10)
+        self.left_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+
+        self.right_frame = LabelFrame(self.root, text="Upcoming Due Dates", padx=10, pady=10)
+        self.right_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
 
 
-        with open("tasks.json", "r") as f:
-                self.tasks=json.load(f)
-        
+        self.display_left_panel()
+        self.display_right_panel()
+
+
+    def load_tasks(self):
+        try:
+            with open("tasks.json", "r") as f:
+                content = f.read().strip()
+                if not content:
+                    return []
+                tasks = json.loads(content)
+        except (FileNotFoundError, json.JSONDecodeError):
+            tasks = []
+        return tasks
+
+
+
+    def display_left_panel(self):
+
 
         self.sorted_order=sorted(self.tasks, key=lambda item: item["Level"])
 
         for i, task in enumerate(self.sorted_order):
-            name_label = Label(self.root, text=task["Project Name"], font="Arial 12", )
-            name_label.grid(row=i+4, column=0, padx=10, pady=2)
-        
-        upcoming_label=Label(frame,text="Upcoming Due Dates",font="Arial 12")
-        upcoming_label.grid(row=7,column=3,pady=5,padx=5)       
 
-        
-        '''
-        name_label=Label(frame,text=self.tasks,font="arial 12", justify=LEFT)
-        name_label.grid(row=4,column=0,padx=10,pady=10)
-        '''
-        
+            checkbox_progress = Checkbutton(self.left_frame, text=f"{task['Project Name']}")
+            checkbox_progress.grid(row=i, column=0, sticky="w")
+
+            entry = Entry(self.left_frame, width=5)
+            entry.insert(0, task["Progress"])
+            entry.grid(row=i, column=1)
+
+    def display_right_panel(self):
+        for widget in self.right_frame.winfo_children():
+            widget.destroy()
+
+        sorted_tasks = sorted(self.tasks, key=lambda item: datetime.strptime(item["Due Date"], "%Y-%m-%d"))
+
+        for task in sorted_tasks:
+            Label(self.right_frame, text=f"{task['Project Name']} : {task['Due Date']}").grid(sticky="nsew")
+
+
+       
     def run(self):
         self.root.mainloop()
 app = ProgressTracker()
 app.run()
-
