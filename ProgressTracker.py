@@ -54,9 +54,9 @@ class ProgressTracker:
         self.sorted_order=sorted(self.tasks, key=lambda item: item["Level"])
 
         for i, task in enumerate(self.sorted_order):
-
-            checkbox_progress = Checkbutton(self.left_frame, text=f"{task['Project Name']}",command=self.update_progress)
-            checkbox_progress.grid(row=i, column=0, sticky="w")
+            var=IntVar(value=1 if task["Progress"]==100 else 0)
+            self.checkbox_progress = Checkbutton(self.left_frame, text=f"{task['Project Name']}",command=self.update_progress,variable=var)
+            self.checkbox_progress.grid(row=i, column=0, sticky="w")
 
 
 
@@ -70,14 +70,13 @@ class ProgressTracker:
 
         for task in sorted_tasks:
             Label(self.right_frame, text=f"{task['Project Name']} : {task['Due Date']}").grid(sticky="nsew")
-    def update_progress(self):  
-        #1==not checked
-        #0==Checked
-        num=self.checkbox_progress.get()
-        if num==1:
-            print("hello")
-        else:
-            print("goodbye")
+
+    def update_progress(self,var):  
+        if var.get()==1:
+            print("This has been checked off")
+
+        
+
     def display_progress_bar(self):
         pass
        
