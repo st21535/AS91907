@@ -1,13 +1,5 @@
-'''
-Progress tracking
-
-Vers1
--Ordered tasks by priorty + due date 
--Need Progress bar
-'''
-
 from tkinter import *
-
+from tkinter import ttk
 import json
 from datetime import datetime
 
@@ -19,10 +11,17 @@ class ProgressTracker:
 
         self.tasks = self.load_tasks()
 
-        self.root.grid_rowconfigure(0, weight=1)   
-        self.root.grid_rowconfigure(1, weight=0)   
-        self.root.grid_columnconfigure(1, weight=1) 
-        self.root.grid_columnconfigure(0,weight=1)
+        self.setup_layout()
+
+        self.show_priority_tasks()
+        self.show_due_dates()
+        self.update_progress_bar()
+
+    def setup_layout(self):
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_rowconfigure(1, weight=0)
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
 
         self.left_frame = LabelFrame(self.root, text="Tasks by Priority", padx=10, pady=10)
         self.left_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
@@ -30,73 +29,80 @@ class ProgressTracker:
         self.right_frame = LabelFrame(self.root, text="Upcoming Due Dates", padx=10, pady=10)
         self.right_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
 
-        self.bottom_frame = LabelFrame(self.root, text="Progress Bar", padx=10, pady=10)
-        self.bottom_frame.grid(row=1, column=2, sticky="nsew", padx=10, pady=10)
-
-        self.display_left_panel()
-        self.display_right_panel()
-        self.display_progress_bar()
+        self.progress_var = DoubleVar()
+        self.progress_bar = ttk.Progressbar(self.root, variable=self.progress_var, maximum=100)
+        self.progress_bar.grid(row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=(0, 10))
 
     def load_tasks(self):
         try:
             with open("tasks.json", "r") as f:
                 content = f.read().strip()
-                if not content:
-                    return []
-                tasks = json.loads(content)
-        except (FileNotFoundError, json.JSONDecodeError):
-            tasks = []
-        return tasks
+                if content:
+                    return json.loads(content)
+        except:
+            pass
+        return []
 
-    def display_left_panel(self):
+    def save_tasks(self):
+        with open("tasks.json", "w") as f:
+            json.dump(self.tasks, f, indent=4)
 
+    def show_priority_tasks(self):
 
-        self.sorted_order=sorted(self.tasks, key=lambda item: item["Level"])
-        for i, task in enumerate(self.sorted_order):
-            var=IntVar(value=1 if task["Progress"]==100 else 0)
+        sorted_tasks = sorted(self.tasks, key=lambda task: int(task["Level"]))
 
-            #Checkbox for progress
-            self.checkbox_progress = Checkbutton(self.left_frame, text=f"{task['Project Name']}",command=lambda v=var,t=task: self.completed(v,t),variable=var)
-            self.checkbox_progress.grid(row=i, column=0, sticky="w")
-            #entry
+        row_number = 0
+        for task in sorted_tasks:
+            done_var = IntVar(value=1 if task["Progress"] == 100 else 0)
+
+            cb_text = f"{task['Project Name']} (P{task['Level']})"
+            cb = Checkbutton(self.left_frame, text=cb_text, variable=done_var,
+                             command=lambda t=task, v=done_var: self.mark_complete(t, v))
+            cb.grid(row=row_number, column=0, sticky="w")
+
             entry = Entry(self.left_frame, width=5)
             entry.insert(0, task["Progress"])
-            entry.grid(row=i, column=1)
+            entry.grid(row=row_number, column=1)
 
-    def display_right_panel(self):
-        sorted_tasks = sorted(self.tasks, key=lambda item: datetime.strptime(item["Due Date"], "%Y-%m-%d"))
+            entry.bind("<FocusOut>", lambda e, t=task, ent=entry: self.update_progress(t, ent))
+            row_number += 1
+
+    def show_due_dates(self):
+
+        sorted_tasks = sorted(self.tasks, key=lambda task: datetime.strptime(task["Due Date"], "%Y-%m-%d"))
 
         for task in sorted_tasks:
-            Label(self.right_frame, text=f"{task['Project Name']} : {task['Due Date']}").grid(sticky="nsew")
-
-    def completed(self,var,task):  
-        if var.get()==1:
-            task["Progress"]=100
-            self.update_progress_bar() #change the progress bar
-            self.display_left_panel()
+            Label(self.right_frame, text=f"{task['Project Name']} - {task['Due Date']}").pack(anchor="w")
 
 
-    def update_progress(self,task,entry):
-        num=int(entry.get())
-        if num >=100:
-           if num >= 100:
-               self.tasks = [t for t in self.tasks if t["Project Name"] != task["Project Name"]]
-        else:
-            for t in self.tasks:
-                if t["Project Name"]==task["Project Name"]:
-                    t["Progress"]=num
-                    break     
+    def mark_complete(self, task, var):
+        if var.get() == 1:
+            task["Progress"] = 100
+            self.tasks = [t for t in self.tasks if t["Project Name"] != task["Project Name"]]
+            self.save_tasks()
+            self.show_priority_tasks()
+            self.show_due_dates()
+            self.update_progress_bar()
+
+    def update_progress(self, task, entry):
+        new_value = int(entry.get())  
+        task["Progress"] = new_value
+        if new_value >= 100:
+            self.tasks = [t for t in self.tasks if t["Project Name"] != task["Project Name"]]
+        self.save_tasks()
+        self.show_priority_tasks()
+        self.show_due_dates()
         self.update_progress_bar()
-        self.display_left_panel()
 
-
-    def display_progress_bar(self):
-        pass
     def update_progress_bar(self):
-        pass
-
+        if not self.tasks:
+            self.progress_var.set(0)
+            return
+        avg = sum(task["Progress"] for task in self.tasks) / len(self.tasks)
+        self.progress_var.set(avg)
 
     def run(self):
         self.root.mainloop()
+
 app = ProgressTracker()
 app.run()
