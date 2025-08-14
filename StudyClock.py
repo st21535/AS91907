@@ -1,42 +1,73 @@
-
-from tkinter import * 
-import time 
-import json
-from tkinter import ttk
+import time
+from tkinter import *
+import threading
 class StudyClock:
     def __init__(self):
         self.root=Tk()
-        self.root.title("StudyClock!")
-        self.container=Frame(self.root)
         self.root.geometry("600x400")
+        self.root.title("Study Clock")
 
-        self.tasks=self.load_tasks()
-        self.int_mins=25 #How many mins in a cycle
-        self.tot_int=1
-        self.current_seconds=self.int_mins * 60
+        self.timer_label=Label(self.root,text="10:00",font="Arial 17")
+        self.timer_label.grid(pady=10,padx=10)
 
-        Label(self.root,text="Task Selector: ",font="arial 12").pack(pady=10,padx=10)
-        self.task_var=StringVar()
+        btn_frame=Frame(self.root)
+        btn_frame.grid(pady=10)
+        self.is_running = False
 
+        self.startbtn=Button(btn_frame,text="Start",width=10,command=self.start_timer)
+        self.startbtn.grid(row=0,column=0,padx=10)
+        self.pausebtn=Button(btn_frame,text="Pause",width=10,command=self.pause_timer,state=DISABLED)
+        self.pausebtn.grid(row=0,column=1,padx=10)
+    def start_timer(self):
+        if not self.is_running:
+            self.is_running=True
+            self.startbtn.config(state=DISABLED)
+            self.pausebtn.config(state=NORMAL)
+            
+            t = threading.Thread(target=self.countdown, args=(25*60,), daemon=True)
+            t.start()
+    def pause_timer(self):
+            self.is_running=True
+            self.startbtn.config(state=NORMAL)
+            self.pausebtn.config(state=DISABLED)
+    def lockin(self):
+            if not self.is_running:
+                self.is_running=True
+                self.startbtn.config(state=DISABLED)
+                self.pausebtn.config(state=DISABLED)
 
-        task_names=[task["Project Name"] for task in self.tasks] or ["here are no current tasks"]
-        self.task_menu=ttk.Combobox(self.root,textvariable=self.task_var,values=task_names,state="readonly")
-        self.task_menu.current(0)
-        self.task_menu.pack(pady=5)                                    
+    def format_time(self,total_seconds):
 
-    def load_tasks(self):
-        try:
-            with open("tasks.json", "r") as f:
-                content = f.read().strip()
-                if not content:
-                    return []
-                tasks = json.loads(content)
-        except (FileNotFoundError, json.JSONDecodeError):
-            tasks = []
-        return tasks
-        
+        minutes=0
+        seconds=0
+        minutes=total_seconds //60
+        seconds=total_seconds - (minutes * 60)
+
+        if minutes <10:
+            minute= "0" + str(minutes)
+        else:
+            minute=str(minutes)
+        if seconds <10:
+            second= "0" 
+        else:
+            second=str(seconds)
+        return minute + str(seconds)+ ":" + second
+
+    def countdown(self,total_seconds):
+        seconds_left=total_seconds
+        while seconds_left >=0 and self.is_running:
+            time_text=self.format_time(seconds_left)
+            self.timer_label.config(text=time_text)
+
+            time.sleep(1)
+            seconds_left=seconds_left-1
+
+            if seconds_left<0:
+                self.timer_label.config(text="Time is up!")
+                self.is_running=False
+                self.startbtn.config(state=NORMAL)
+                self.pausebtn.config(state=DISABLED)
     def run(self):
         self.root.mainloop()
 
-app = StudyClock()
-app.run()
+StudyClock().run()
