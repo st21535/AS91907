@@ -5,7 +5,7 @@ buttons
 need to add
 -fix start(when start dont reset)
 pomodorro technique
-
+lock in mode
 
 
 
@@ -14,6 +14,8 @@ pomodorro technique
 import time
 from tkinter import *
 import threading
+import json
+from tkinter import ttk
 class StudyClock:
     def __init__(self):
         self.root=Tk()
@@ -22,15 +24,41 @@ class StudyClock:
 
         self.timer_label=Label(self.root,text="10:00",font="Arial 17")
         self.timer_label.grid(pady=10,padx=10)
+        self.tasks=self.load_tasks()
 
+        self.tasks_var=StringVar()
+        task_names=[]
+
+        for task in self.tasks:
+            task_names.append(task["Project Name"])
+        if not task_names:
+            task_names=["There are no availiable tasks. Go to Task manager to Add"]
         btn_frame=Frame(self.root)
         btn_frame.grid(pady=10)
         self.is_running = False
+
+
+
+        task_label=Label(self.root,text="Select Tasks",font="arial 17")
+        task_label.grid(row=0,column=1)
+
+        self.tasks_menu=ttk.Combobox(self.root,textvariable=self.tasks_var,values=task_names,state="Readonly")
+        self.tasks_menu.current(0)
+        self.tasks_menu.grid(row=0,column=1)
 
         self.startbtn=Button(btn_frame,text="Start",width=10,command=self.start_timer)
         self.startbtn.grid(row=0,column=0,padx=10)
         self.pausebtn=Button(btn_frame,text="Pause",width=10,command=self.pause_timer,state=DISABLED)
         self.pausebtn.grid(row=0,column=1,padx=10)
+    def load_tasks(self):
+        try:
+            task=open("tasks.json", "r")
+            content=task.read()
+            task.close()
+            tasks=json.loads(content)
+            return tasks
+        except:
+            return[]
     def start_timer(self):
         if not self.is_running:
             self.is_running=True
