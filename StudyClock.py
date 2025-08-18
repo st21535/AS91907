@@ -1,3 +1,16 @@
+'''
+Working
+-clock
+buttons
+need to add
+-fix start(when start dont reset)
+pomodorro technique
+
+
+
+
+'''
+
 import time
 from tkinter import *
 import threading
@@ -24,17 +37,17 @@ class StudyClock:
             self.startbtn.config(state=DISABLED)
             self.pausebtn.config(state=NORMAL)
             
-            t = threading.Thread(target=self.countdown, args=(25*60,), daemon=True)
+            t = threading.Thread(target=self.countdown, args=(10*60,), daemon=True)
             t.start()
     def pause_timer(self):
-            self.is_running=True
+            self.is_running=False
             self.startbtn.config(state=NORMAL)
             self.pausebtn.config(state=DISABLED)
-    def lockin(self):
+    '''def lockin(self):
             if not self.is_running:
                 self.is_running=True
                 self.startbtn.config(state=DISABLED)
-                self.pausebtn.config(state=DISABLED)
+                self.pausebtn.config(state=DISABLED)'''
 
     def format_time(self,total_seconds):
 
@@ -48,10 +61,10 @@ class StudyClock:
         else:
             minute=str(minutes)
         if seconds <10:
-            second= "0" 
+            second= "0" +str(seconds)
         else:
             second=str(seconds)
-        return minute + str(seconds)+ ":" + second
+        return minute + ":" + second
 
     def countdown(self,total_seconds):
         seconds_left=total_seconds
@@ -62,11 +75,11 @@ class StudyClock:
             time.sleep(1)
             seconds_left=seconds_left-1
 
-            if seconds_left<0:
-                self.timer_label.config(text="Time is up!")
-                self.is_running=False
-                self.startbtn.config(state=NORMAL)
-                self.pausebtn.config(state=DISABLED)
+        if seconds_left<0:
+            self.timer_label.config(text="Time is up!")
+            self.is_running=False
+            self.startbtn.config(state=NORMAL)
+            self.pausebtn.config(state=DISABLED)
     def run(self):
         self.root.mainloop()
 
