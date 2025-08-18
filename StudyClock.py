@@ -32,7 +32,7 @@ class StudyClock:
         for task in self.tasks:
             task_names.append(task["Project Name"])
         if not task_names:
-            task_names=["There are no availiable tasks. Go to Task manager to Add"]
+            task_names=["no availiable tasks."]
         btn_frame=Frame(self.root)
         btn_frame.grid(pady=10)
         self.is_running = False
