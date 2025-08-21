@@ -35,10 +35,10 @@ class StudyClock:
 
         btn_frame=Frame(self.root)
         btn_frame.grid(pady=10)
-        
+
         self.is_running = False
         self.default_time=10*60
-        self.remaining_time=self.default_time
+        self.seconds_left=self.default_time
 
 
 
@@ -69,7 +69,7 @@ class StudyClock:
             self.startbtn.config(state=DISABLED)
             self.pausebtn.config(state=NORMAL)
             
-            t = threading.Thread(target=self.countdown, args=(10*60,), daemon=True)
+            t = threading.Thread(target=self.countdown, daemon=True)
             t.start()
     def pause_timer(self):
             self.is_running=False
@@ -91,7 +91,7 @@ class StudyClock:
     def countdown(self):
 
         while self.seconds_left >=0 and self.is_running:
-            self.timer_label.config(text=self.format_time(self.remaining_time))
+            self.timer_label.config(text=self.format_time(self.seconds_left))
             time.sleep(1)
             self.seconds_left-=1
 
