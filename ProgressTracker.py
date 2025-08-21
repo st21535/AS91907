@@ -46,7 +46,6 @@ class ProgressTracker:
     def save_tasks(self):
         with open("tasks.json", "w") as f:
             json.dump(self.tasks, f, indent=4)
-
     def show_priority_tasks(self):
 
         sorted_tasks = sorted(self.tasks, key=lambda task: int(task["Level"]))
@@ -68,6 +67,8 @@ class ProgressTracker:
             row_number += 1
 
     def show_due_dates(self):
+        for widget in self.right_frame.winfo_children():
+            widget.destroy()
 
         sorted_tasks = sorted(self.tasks, key=lambda task: datetime.strptime(task["Due Date"], "%Y-%m-%d"))
 
@@ -85,6 +86,11 @@ class ProgressTracker:
             self.update_progress_bar()
 
     def update_progress(self, task, entry):
+        try:
+            new_value = int(entry.get())
+        except ValueError:
+            return
+        
         new_value = int(entry.get())  
         task["Progress"] = new_value
         if new_value >= 100:
