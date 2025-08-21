@@ -24,18 +24,21 @@ class StudyClock:
 
         self.timer_label=Label(self.root,text="10:00",font="Arial 17")
         self.timer_label.grid(pady=10,padx=10)
-        self.tasks=self.load_tasks()
 
+        self.tasks=self.load_tasks()
         self.tasks_var=StringVar()
         task_names=[]
-
         for task in self.tasks:
             task_names.append(task["Project Name"])
         if not task_names:
             task_names=["no availiable tasks."]
+
         btn_frame=Frame(self.root)
         btn_frame.grid(pady=10)
+        
         self.is_running = False
+        self.default_time=10*60
+        self.remaining_time=self.default_time
 
 
 
@@ -48,17 +51,18 @@ class StudyClock:
 
         self.startbtn=Button(btn_frame,text="Start",width=10,command=self.start_timer)
         self.startbtn.grid(row=0,column=0,padx=10)
+
         self.pausebtn=Button(btn_frame,text="Pause",width=10,command=self.pause_timer,state=DISABLED)
         self.pausebtn.grid(row=0,column=1,padx=10)
+
+
     def load_tasks(self):
         try:
-            task=open("tasks.json", "r")
-            content=task.read()
-            task.close()
-            tasks=json.loads(content)
-            return tasks
+           with open("tasks.json","r") as task_file:
+               return json.load(task_file)
         except:
             return[]
+        
     def start_timer(self):
         if not self.is_running:
             self.is_running=True
@@ -79,35 +83,24 @@ class StudyClock:
 
     def format_time(self,total_seconds):
 
-        minutes=0
-        seconds=0
         minutes=total_seconds //60
-        seconds=total_seconds - (minutes * 60)
+        seconds=total_seconds%60
+        return f"{minutes:02}:{seconds:02}"
 
-        if minutes <10:
-            minute= "0" + str(minutes)
-        else:
-            minute=str(minutes)
-        if seconds <10:
-            second= "0" +str(seconds)
-        else:
-            second=str(seconds)
-        return minute + ":" + second
 
-    def countdown(self,total_seconds):
-        seconds_left=total_seconds
-        while seconds_left >=0 and self.is_running:
-            time_text=self.format_time(seconds_left)
-            self.timer_label.config(text=time_text)
+    def countdown(self):
 
+        while self.seconds_left >=0 and self.is_running:
+            self.timer_label.config(text=self.format_time(self.remaining_time))
             time.sleep(1)
-            seconds_left=seconds_left-1
+            self.seconds_left-=1
 
-        if seconds_left<0:
+        if self.seconds_left<0:
             self.timer_label.config(text="Time is up!")
             self.is_running=False
             self.startbtn.config(state=NORMAL)
             self.pausebtn.config(state=DISABLED)
+            self.seconds_left=self.default_time
     def run(self):
         self.root.mainloop()
 
