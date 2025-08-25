@@ -1,3 +1,7 @@
+from ProgressTrackervers3 import ProgressTracker
+from TaskAddervers3 import TaskManger
+from StudyClockVers3 import StudyClock
+
 
 from tkinter import *
 
@@ -5,7 +9,7 @@ class MainFile:
     def __init__(self):
         self.root = Tk()
         self.root.title("Study Buddy")
-        self.root.geometry("500x450")
+        self.root.geometry("500x445")
         self.root.resizable(False, False)
         self.root.configure(bg="#ffffff")
 
