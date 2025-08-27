@@ -1,6 +1,7 @@
 """
-Vers 3 Working
-eith comments
+Mainfile
+Pycode
+
 """
 
 # Importing the 3 modules from other files
@@ -101,7 +102,7 @@ class MainFile:
 
         # Main menu options in a list
         buttons = [
-            ("Task Manager", self.to_TMFrame),
+            ("Task Adder", self.to_TMFrame),
             ("Progress Tracker", self.to_PTFrame),
             ("Study Tracker", self.to_CLFrame),
         ]
