@@ -134,8 +134,35 @@ class MainFile:
             ("Main Menu", self.show_main_menu),
             ("Task Manager", self.to_TMFrame),
             ("Study Tracker", self.to_CLFrame),
+            ("How to Use", self.PTinfo)
         ]
         self.create_buttons(buttons)  # Passing the list to function
+
+    def PTinfo(self):
+        img=Toplevel()
+        img.title("Information")
+
+        img.geometry("400x200")
+        img.resizable(False, False)
+
+
+        PTinfo = PhotoImage(file = "PTInfo2.png")
+        label=Label(img,image=PTinfo)
+        label.image=PTinfo
+        label.pack(expand=True)
+    
+    def SCinfo(self):
+        img=Toplevel()
+        img.title("Information")
+
+        img.geometry("400x290")
+        img.resizable(False, False)
+
+
+        SCinfo = PhotoImage(file = "SCInfo2.png")
+        label=Label(img,image=SCinfo)
+        label.image=SCinfo
+        label.pack(expand=True)
 
     # To (study) clock function
     def to_CLFrame(self):
@@ -146,6 +173,7 @@ class MainFile:
         buttons = [
             ("Main Menu", self.show_main_menu),
             ("Progress Tracker", self.to_PTFrame),
+            ("How to Use",self.SCinfo)
         ]
         self.create_buttons(buttons)  # Passes list to function
 
