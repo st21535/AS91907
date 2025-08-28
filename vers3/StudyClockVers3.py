@@ -1,13 +1,6 @@
-'''
-Clock
-pycode
-'''
-
-import time
-import threading
+import json
 from tkinter import *
 from tkinter import ttk, messagebox
-import json
 
 
 class StudyClock:
@@ -77,7 +70,7 @@ class StudyClock:
             text="00:00",
             font=("verdana", 36, "bold"),
             bg="#ffffff",
-            fg="#4CAF50",
+            fg="#46FF96",
         )
         self.timer_display.pack(pady=(0, 15))
 
@@ -144,6 +137,16 @@ class StudyClock:
         self.mode5, self.time5 = "work", 10
         self.mode6, self.time6 = "long_break", 15
 
+        # Steps preset
+        self.steps = [
+            ("Work", 10, "Work for 10 minutes"),
+            ("Short Break", 5, "Take a 5 min break"),
+            ("Work", 10, "Work for 10 minutes"),
+            ("Short Break", 5, "Take a 5 min break"),
+            ("Work", 10, "Work for 10 minutes"),
+            ("Long Break", 15, "Take a 15 min break"),
+        ]
+
     def start_timer(self):
         # If the timer is not already on, turn on
         if not self.timer_on:
@@ -161,7 +164,7 @@ class StudyClock:
             # Reset cycle progress
             self.total_cycles = num_cycles
             self.progress_bar["maximum"] = self.total_cycles
-            self.progress_bar["value"] = 0
+            self.progress_var.set(0)
             self.progress_label.config(
                 text=f"0/{self.total_cycles} cycles done"
             )
@@ -170,65 +173,61 @@ class StudyClock:
             self.timer_on = True
             self.current_cycle_num = 0
             self.completed_cycles = 0
-
-            # Running the timer in a different thread
-            t = threading.Thread(target=self.run_timer)
-            t.start()
+            self.next_step()  # start first step
 
     def stop_timer(self):
         # Stops timer
         self.timer_on = False
 
-    def run_timer(self):
-        # 3x work, 2x short break, 1x long break -- Cycle
-        steps = [
-            ("Work", 10, "Work for 10 minutes"),
-            ("Short Break", 5, "Take a 5 min break"),
-            ("Work", 10, "Work for 10 minutes"),
-            ("Short Break", 5, "Take a 5 min break"),
-            ("Work", 10, "Work for 10 minutes"),
-            ("Long Break", 15, "Take a 15 min break"),
-        ]
+    def next_step(self):
+        # Start next step if timer is on
+        if not self.timer_on:
+            return
 
-        # Loop all the cycles until all of the cycles are complete
-        while self.timer_on and self.completed_cycles < self.total_cycles:
-            # Getting the current step
-            title, duration, msg = steps[self.current_cycle_num]
-            self.seconds_left = duration  # *60 to do mins, testing with seconds
-
-            # Pop up information after each step - for visual aid
-            self.frame.after(0, lambda t=title, m=msg: messagebox.showinfo(t, m))
-
-            # Countdown loop
-            while self.seconds_left > 0 and self.timer_on:
-                mins = self.seconds_left // 60
-                secs = self.seconds_left % 60
-                self.timer_display.config(
-                    text=f"{str(mins).zfill(2)}:{str(secs).zfill(2)}"
-                )
-                time.sleep(1)
-                self.seconds_left -= 1
-
-            # Moving on to the next step
-            self.current_cycle_num += 1
-            if self.current_cycle_num >= len(steps):
-                self.completed_cycles += 1
-                self.current_cycle_num = 0
-                self.update_progress()
-
-        # If all the cycles are completed, then they get this popup
         if self.completed_cycles >= self.total_cycles:
             messagebox.showinfo("Completed!", "Studying done! Update Progress!")
             self.timer_on = False
+            return
+
+        # Getting the current step
+        title, duration, msg = self.steps[self.current_cycle_num]
+        if "Break" in title:
+            self.timer_display.config(fg="#4DA3FA") 
+        else:
+            self.timer_display.config(fg="#46FF96")    
+        self.seconds_left = duration  # *60 to do mins, testing with seconds
+
+        # Pop up information after each step - for visual aid
+        self.frame.after(0, lambda t=title, m=msg: messagebox.showinfo(t, m))
+
+        # Countdown loop using after()
+        self.countdown_step()
+
+    def countdown_step(self):
+        # Non-blocking countdown
+        if not self.timer_on:
+            return
+
+        if self.seconds_left > 0:
+            mins = self.seconds_left // 60
+            secs = self.seconds_left % 60
+            self.timer_display.config(
+                text=f"{str(mins).zfill(2)}:{str(secs).zfill(2)}"
+            )
+            self.seconds_left -= 1
+            self.frame.after(1000, self.countdown_step)
+        else:
+            # Moving on to the next step
+            self.current_cycle_num += 1
+            if self.current_cycle_num >= len(self.steps):
+                self.completed_cycles += 1
+                self.current_cycle_num = 0
+                self.update_progress()
+            self.next_step()
 
     def update_progress(self):
-        self.frame.after(
-        0,
-        lambda: (
-            self.progress_bar.config(value=self.completed_cycles),
-            self.progress_label.config(
-                text=f"{self.completed_cycles}/{self.total_cycles} cycles done"
-            )
-        ),
-    )
-
+        # Updates the progress bar
+        self.progress_var.set(self.completed_cycles)
+        self.progress_label.config(
+            text=f"{self.completed_cycles}/{self.total_cycles} cycles done"
+        )
