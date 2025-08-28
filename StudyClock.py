@@ -1,152 +1,90 @@
-
-'''
-V2 Validation
-'''
 import time
-import threading
 from tkinter import *
-from tkinter import ttk, messagebox
+import threading
 import json
+from tkinter import ttk
 
 class StudyClock:
-    def __init__(self, parent):
-        self.frame = Frame(parent)
-        self.frame.grid(row=0, column=0, sticky="nsew")
+    def __init__(self,parent):
+        # create a frame inside the parent window
+        self.frame=Frame(parent)
+        self.frame.grid(row=0, column=0, sticky="nsew")  
+        self.root = parent   # keep a reference to the parent
 
-        # TASK DROPDOWN AT TOP
+        # label that shows the timer (default = 10:00)
+        self.timer_label = Label(self.root, text="10:00", font="Arial 17")
+        self.timer_label.grid(pady=10, padx=10)
 
-        self.tasks = []
-        try:
-            with open("tasksv2.json", "r") as f:
-                self.tasks = json.load(f)
-        except:
-            self.tasks = []
+        # load tasks from json file and prepare dropdown list
+        self.tasks = self.load_tasks()
+        self.tasks_var = StringVar()
+        task_names = [task["Project Name"] for task in self.tasks] or ["no available tasks."]
 
-        task_names = []
-        for t in self.tasks:
-            task_names.append(t["Project Name"])
+        # frame to hold the start/pause buttons
+        btn_frame = Frame(self.frame)
+        btn_frame.grid(pady=10)
 
-        if not task_names:
-            task_names = ["no tasks"]
+        # label and dropdown menu for choosing a task
+        task_label = Label(self.frame, text="Select Tasks", font="Arial 17")
+        task_label.grid(row=0, column=1)
 
-        self.selected_task = StringVar()
-        self.selected_task.set(task_names[0])
+        self.tasks_menu = ttk.Combobox(self.frame, textvariable=self.tasks_var, values=task_names, state="readonly")
+        self.tasks_menu.current(0)  # select first task by default
+        self.tasks_menu.grid(row=0, column=1)
 
-        self.task_label = Label(self.frame, text="Select Task:", font=("Arial", 12))
-        self.task_label.grid(row=0, column=0, padx=10, pady=5, sticky=W)
-        self.task_menu = ttk.Combobox(self.frame, textvariable=self.selected_task, values=task_names, state="readonly")
-        self.task_menu.grid(row=0, column=1, padx=10, pady=5)
+        # start + pause buttons
+        self.startbtn = Button(btn_frame, text="Start", width=10, command=self.start_timer)
+        self.startbtn.grid(row=0, column=0, padx=10)
 
-        # ENTRY BOX FOR CYCLES
-        self.cycles_label = Label(self.frame, text="How many cycles (max 5):", font=("Arial", 12))
-        self.cycles_label.grid(row=1, column=0, padx=10, pady=5, sticky=W)
-        self.cycle_entry = Entry(self.frame)
-        self.cycle_entry.insert(0, "1")
-        self.cycle_entry.grid(row=1, column=1, padx=10, pady=5)
+        self.pausebtn = Button(btn_frame, text="Pause", width=10, command=self.pause_timer, state=DISABLED)
+        self.pausebtn.grid(row=0, column=1, padx=10)
 
-        # TIMER DISPLAY
-        self.timer_display = Label(self.frame, text="00:00", font=("Arial", 20))
-        self.timer_display.grid(row=2, column=0, columnspan=2, pady=10)
-
-        # START / STOP BUTTONS
-        self.start_btn = Button(self.frame, text="Start", width=10, command=self.start_timer)
-        self.start_btn.grid(row=3, column=0, pady=5)
-        self.stop_btn = Button(self.frame, text="Stop", width=10, command=self.stop_timer)
-        self.stop_btn.grid(row=3, column=1, pady=5)
-
-        # PROGRESS BAR
-        self.progress = ttk.Progressbar(self.frame, length=200)
-        self.progress.grid(row=4, column=0, columnspan=2, pady=10)
-        self.progress_label = Label(self.frame, text="0/0 cycles done")
-        self.progress_label.grid(row=5, column=0, columnspan=2)
-
-        # STATES
+        # timer variables
         self.is_running = False
-        self.seconds_left = 0
-        self.step_in_cycle = 0
-        self.done_cycles = 0
-        self.total_cycles = 0
+        self.default_time = 10 * 60  # 10 minutes in seconds
+        self.remaining_time = self.default_time
 
-        # FIXED PLAN (LOCKED TIMES)
-        self.mode1 = "work"
-        self.time1 = 10
-        self.mode2 = "short_break"
-        self.time2 = 5
-        self.mode3 = "work"
-        self.time3 = 10
-        self.mode4 = "short_break"
-        self.time4 = 5
-        self.mode5 = "work"
-        self.time5 = 10
-        self.mode6 = "long_break"
-        self.time6 = 15
+    # read the tasks.json file and return the tasks list
+    def load_tasks(self):
+        try:
+            with open("tasks.json", "r") as task_file:
+                return json.load(task_file)
+        except:
+            return []   # return empty if file not found / invalid
 
-    # TIMER LOGIC
+    # start the countdown
     def start_timer(self):
-        if self.is_running == False:
-            # get cycles
-            try:
-                num = int(self.cycle_entry.get())
-            except:
-                messagebox.showerror("Invalid input", "Please type a number 1–5")
-                return
-
-            if num < 1 or num > 5:
-                messagebox.showerror("Invalid number", "Enter number between 1 and 5")
-                return
-
-            self.total_cycles = num
-            self.progress["maximum"] = self.total_cycles
-            self.progress["value"] = 0
-            self.progress_label.config(text="0/" + str(self.total_cycles) + " cycles done")
-
+        if not self.is_running:
             self.is_running = True
-            self.step_in_cycle = 0
-            self.done_cycles = 0
+            self.startbtn.config(state=DISABLED)
+            self.pausebtn.config(state=NORMAL)
 
-            t = threading.Thread(target=self.run_timer)
+            t = threading.Thread(target=self.countdown, daemon=True)
             t.start()
 
-    def stop_timer(self):
+    # pause/stop the countdown
+    def pause_timer(self):
         self.is_running = False
+        self.startbtn.config(state=NORMAL)
+        self.pausebtn.config(state=DISABLED)
 
-    def run_timer(self):
-        # create a simple list for the 6 steps
-        steps = [
-            ("Work", 10, "Work for 10 minutes"),
-            ("Short Break", 5, "Take a 5 min break"),
-            ("Work", 10, "Work for 10 minutes"),
-            ("Short Break", 5, "Take a 5 min break"),
-            ("Work", 10, "Work for 10 minutes"),
-            ("Long Break", 15, "Take a 15 min break")
-        ]
+    # format seconds into mm:ss string
+    def format_time(self, total_seconds):
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+        return f"{minutes:02}:{seconds:02}"
 
-        while self.is_running == True and self.done_cycles < self.total_cycles:
-            # get current step
-            title, duration, msg = steps[self.step_in_cycle]
+    # actual countdown logic
+    def countdown(self):
+        while self.remaining_time >= 0 and self.is_running:
+            self.timer_label.config(text=self.format_time(self.remaining_time))
+            time.sleep(1)                 # wait 1 sec
+            self.remaining_time -= 1      # subtract 1 sec from total time
 
-            self.seconds_left = duration * 60
-            self.frame.after(0, lambda t=title, m=msg: messagebox.showinfo(t, m))
-
-            while self.seconds_left > 0 and self.is_running == True:
-                mins = self.seconds_left // 60
-                secs = self.seconds_left % 60
-                self.timer_display.config(text=str(mins).zfill(2) + ":" + str(secs).zfill(2))
-                time.sleep(1)
-                self.seconds_left -= 1
-
-            # move to next step
-            self.step_in_cycle += 1
-            if self.step_in_cycle >= len(steps):
-                self.done_cycles += 1
-                self.step_in_cycle = 0
-                self.update_progress()
-
-        if self.done_cycles >= self.total_cycles:
-            messagebox.showinfo("Done!", "All cycles complete 🎉")
+        # when timer hits 0
+        if self.remaining_time < 0:
+            self.timer_label.config(text="Time is up!")
             self.is_running = False
-
-
-    def update_progress(self):
-        self.progress["value"] = self.done_cycles
-        self.progress_label.config(text=str(self.done_cycles) + "/" + str(self.total_cycles) + " cycles done")
+            self.startbtn.config(state=NORMAL)
+            self.pausebtn.config(state=DISABLED)
+            self.remaining_time = self.default_time  # reset for next study session
