@@ -26,6 +26,7 @@ class StudyClock:
         task_names = [t["Project Name"] for t in self.tasks]
         if not task_names:
             task_names = ["No tasks-Enter Task"]  # If no tasks exist, display message
+            messagebox.showerror("No Task", "You have no pending tasks. Clock will stil work but we reccomend you have a goal to work towards")
 
         # Drop down for selecting task
         self.selected_task = StringVar()
@@ -195,7 +196,7 @@ class StudyClock:
             self.timer_display.config(fg="#4DA3FA") 
         else:
             self.timer_display.config(fg="#46FF96")    
-        self.seconds_left = duration  # *60 to do mins, testing with seconds
+        self.seconds_left = duration# *60 to do mins, testing with seconds
 
         # Pop up information after each step - for visual aid
         self.frame.after(0, lambda t=title, m=msg: messagebox.showinfo(t, m))
@@ -215,7 +216,8 @@ class StudyClock:
                 text=f"{str(mins).zfill(2)}:{str(secs).zfill(2)}"
             )
             self.seconds_left -= 1
-            self.frame.after(1000, self.countdown_step)
+            #If testing, change 1000 to 200m otherwise keep at 1000
+            self.frame.after(200, self.countdown_step) 
         else:
             # Moving on to the next step
             self.current_cycle_num += 1
